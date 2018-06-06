@@ -18,10 +18,10 @@
 
 namespace cppoptlib {
 
-template<typename Scalar_, int Dim_ = Eigen::Dynamic>
-class BoundedProblem : public Problem<Scalar_, Dim_> {
+template<typename Scalar_, int CompileDim_ = Eigen::Dynamic>
+class BoundedProblem : public Problem<Scalar_, CompileDim_> {
 public:
-    using Superclass = Problem<Scalar_, Dim_>;
+    using Superclass = Problem<Scalar_, CompileDim_>;
     using typename Superclass::Scalar;
     using typename Superclass::TVector;
 
@@ -30,9 +30,11 @@ protected:
     TVector m_upperBound;
 
 public:
-    BoundedProblem() : Superclass() {
-        m_lowerBound.setConstant(-std::numeric_limits<Scalar>::infinity());
-        m_upperBound.setConstant(std::numeric_limits<Scalar>::infinity());
+    BoundedProblem(int RunDim = CompileDim_) : Superclass() {
+        TVector infBound(RunDim);
+        infBound.setConstant(std::numeric_limits<Scalar>::infinity());
+        m_lowerBound = -infBound;
+        m_upperBound = infBound;
     }
 
     BoundedProblem(const TVector &l, const TVector &u) :
@@ -49,6 +51,10 @@ public:
     void setBoxConstraint(TVector  lb, TVector  ub) {
         setLowerBound(lb);
         setUpperBound(ub);
+    }
+
+    bool isValid(const TVector &x){
+        return ((x - m_lowerBound).array() >= 0.0).all() && ((x - m_upperBound).array() <= 0.0).all();
     }
 };
 

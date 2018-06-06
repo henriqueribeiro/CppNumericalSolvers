@@ -1,6 +1,7 @@
 #ifndef PROBLEM_H
 #define PROBLEM_H
 
+#include <array>
 #include <vector>
 #include <Eigen/Core>
 
@@ -17,14 +18,22 @@ class Problem {
   using THessian  = Eigen::Matrix<Scalar, Dim, Dim>;
   using TCriteria = Criteria<Scalar>;
   using TIndex = typename TVector::Index;
+  using MatrixType = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
 
  public:
   Problem() {}
   virtual ~Problem()= default;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
   virtual bool callback(const Criteria<Scalar> &state, const TVector &x) {
     return true;
   }
+
+  virtual bool detailed_callback(const Criteria<Scalar> &state, SimplexOp op, int index, const MatrixType &x, std::vector<Scalar> f) {
+    return true;
+  }
+#pragma GCC diagnostic pop
 
   /**
    * @brief returns objective value in x
@@ -71,7 +80,7 @@ class Problem {
     gradient(x, actual_grad);
     finiteGradient(x, expected_grad, accuracy);
     for (TIndex d = 0; d < D; ++d) {
-      Scalar scale = std::max((std::max(fabs(actual_grad[d]), fabs(expected_grad[d]))), 1.);
+      Scalar scale = std::max(static_cast<Scalar>(std::max(fabs(actual_grad[d]), fabs(expected_grad[d]))), Scalar(1.));
       if(fabs(actual_grad[d]-expected_grad[d])>1e-2 * scale)
         return false;
     }
@@ -105,7 +114,7 @@ class Problem {
     { { {1, -1}, {1, -8, 8, -1}, {-1, 9, -45, 45, -9, 1}, {3, -32, 168, -672, 672, -168, 32, -3} } };
     static const std::array<std::vector<Scalar>, 4> coeff2 =
     { { {1, -1}, {-2, -1, 1, 2}, {-3, -2, -1, 1, 2, 3}, {-4, -3, -2, -1, 1, 2, 3, 4} } };
-    const std::array<Scalar, 4> dd = {2, 12, 60, 840};
+    static const std::array<Scalar, 4> dd = {2, 12, 60, 840};
 
     grad.resize(x.rows());
     TVector& xx = const_cast<TVector&>(x);
